@@ -1,17 +1,21 @@
 -- Calculate total revenue and revenue by device type
 WITH revenue_usd AS (
-SELECT
-    sp.continent AS continent,
-    SUM(p.price) AS revenue,
-    SUM(case when sp.device = 'mobile' THEN p.price ELSE 0 END) AS  revenue_from_mobile,
-    SUM(case when sp.device = 'desktop' THEN p.price ELSE 0 END) AS  revenue_from_desktop
-FROM `DA.order` o
-JOIN `DA.product` p 
-  ON o.item_id=p.item_id
-JOIN `DA.session_params` sp 
-  ON o.ga_session_id=sp.ga_session_id
-GROUP BY sp.continent),
-
+  SELECT
+    sp.continent,
+    ROUND(SUM(CAST(p.price AS NUMERIC)),2) AS revenue,
+    ROUND(SUM(
+      CASE WHEN sp.device = 'mobile' THEN CAST(p.price AS NUMERIC) ELSE 0 END
+      ),2) AS revenue_from_mobile,
+    ROUND(SUM(
+        CASE WHEN sp.device = 'desktop' THEN CAST(p.price AS NUMERIC) ELSE 0 END
+      ),2 ) AS revenue_from_desktop
+  FROM `DA.order` AS o
+  JOIN `DA.product` AS p
+    ON o.item_id = p.item_id
+  JOIN `DA.session_params` AS sp
+    ON o.ga_session_id = sp.ga_session_id
+  GROUP BY sp.continent
+),
 -- Calculate unique sessions and accounts by continent
 registrations AS (
 SELECT
@@ -54,9 +58,7 @@ SELECT
       JOIN `DA.product` AS p
         ON o.item_id = p.item_id
       )
-      ) * 100,
-      2
-    ) AS percent_revenue_from_total,
+      ) * 100, 2) AS percent_revenue_from_total,
     registrations.account_cnt,
     verified.verified_account,
     registrations.session_cnt
